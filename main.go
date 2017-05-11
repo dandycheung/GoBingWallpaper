@@ -189,7 +189,7 @@ func checkDir() {
 		} else if strings.Contains(fmt.Sprint(err), "permission denied") {
 			logerr("目录检测失败，请检查目录权限。")
 		} else {
-			logerr("目录检测失败，请检查原因。")
+			logerr("目录检测失败，请检查原因或尝试手动建立目录。")
 		}
 	} else {
 		loginfo("目录似乎正常。")
