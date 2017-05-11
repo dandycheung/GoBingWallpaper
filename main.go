@@ -199,7 +199,7 @@ func checkDir() {
 	loginfo("程序将创建测试文件以检查目录是否可写……")
 	f, err := os.Create(dir + "test")
 	f.WriteString("test file.")
-	defer f.Close()
+	f.Close()
 
 	if err != nil {
 		//				创建文件报错
