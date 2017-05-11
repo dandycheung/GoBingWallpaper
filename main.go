@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	api  = "https://cn.bing.com/HPImageArchive.aspx?format=js&idx=0&n=1"
+	api  = "https://cn.bing.com/HPImageArchive.aspx?format=js&n=1&idx="
 	host = "https://cn.bing.com"
 )
 
@@ -45,7 +45,7 @@ type Bing struct {
 }
 
 var bing Bing
-var dir, imgUrl, imgFileName string
+var dir, imgUrl, imgFileName, idx string
 
 func init() {
 
@@ -56,6 +56,7 @@ func init() {
 	defaultDir := userinfo.HomeDir + "/Pictures/BingWallpaper/"
 
 	flag.StringVar(&dir, "dir", defaultDir, "指定图片保存的目录，默认为用户 \"Pictures\" 目录下的 \"BingWallpaper\" 目录，不存在会新建。")
+	flag.StringVar(&idx, "idx", "0", "获取几天前的图片，默认为0表示当天，1表示1天前。")
 
 	flag.Parse()
 }
@@ -84,7 +85,7 @@ func getImgURL() {
 
 	loginfo("从接口获取图片地址……")
 
-	resp, err := http.Get(api)
+	resp, err := http.Get(api + idx)
 	if err != nil {
 		loginfo(fmt.Sprint(err))
 		logerr("图片地址获取失败！")
