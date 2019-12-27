@@ -11,6 +11,8 @@ import (
 	"os/user"
 	"strings"
 	"time"
+
+	"./xdgdirs"
 )
 
 const (
@@ -48,41 +50,46 @@ var bing Bing
 var dir, imgUrl, imgFileName, idx string
 
 func init() {
-
 	userinfo, err := user.Current()
 	if err != nil {
 		logerr(fmt.Sprint(err))
 	}
-	defaultDir := userinfo.HomeDir + "/Pictures/BingWallpaper/"
+
+	picturesDir := userinfo.HomeDir + "/Pictures"
+
+	if dirs := new(xdgdirs.Dirs); dirs != nil {
+		dirs.Load("")
+		picturesDir = dirs.GetDir("PICTURES")
+	}
+
+	defaultDir := picturesDir + "/BingWallpaper/"
 
 	flag.StringVar(&dir, "dir", defaultDir, "指定图片保存的目录，默认为用户 \"Pictures\" 目录下的 \"BingWallpaper\" 目录，不存在会新建。")
-	flag.StringVar(&idx, "idx", "0", "获取几天前的图片，默认为0表示当天，1表示1天前。")
+	flag.StringVar(&idx, "idx", "0", "获取几天前的图片，默认为 0 表示当天，1 表示 1 天前。")
 
 	flag.Parse()
 }
 
 func main() {
-
 	checkDir()
 	getImgURL()
 	getImg()
-
 }
 
+// 记录日志
 func loginfo(logstr string) {
-	//记录日志
 	log.Println("info:", logstr)
 
 }
+
+// 记录错误后退出程序
 func logerr(logstr string) {
-	//记录错误后退出程序。
 	log.Fatalln("error:", logstr)
 
 }
 
+// 获取图片地址
 func getImgURL() {
-	//获取图片地址
-
 	loginfo("从接口获取图片地址……")
 
 	resp, err := http.Get(api + idx)
@@ -99,7 +106,6 @@ func getImgURL() {
 	}
 
 	err = json.Unmarshal(body, &bing)
-
 	if err != nil {
 		loginfo(fmt.Sprint(err))
 		logerr("图片地址解析失败！")
@@ -112,11 +118,10 @@ func getImgURL() {
 
 	imgFileName = time.Now().Format("20060102-150405_") + a[len(a)-1]
 	loginfo(fmt.Sprint("将要保存的图片名称为：", imgFileName))
-
 }
 
+// 获取图片
 func getImg() {
-	//获取图片
 	loginfo("开始下载图片……")
 
 	resp, err := http.Get(imgUrl)
@@ -141,30 +146,30 @@ func getImg() {
 	}
 
 	size, err := f.Write(body)
-
 	if err != nil {
 		loginfo(fmt.Sprint(err))
 		logerr("图片保存失败！")
 	}
-	loginfo(fmt.Sprintf("图片保存成功：%v bytes。", size))
 
+	loginfo(fmt.Sprintf("图片保存成功：%v bytes。", size))
 }
 
+// 检查图像目录是否存在，若不存在则建立。
+// 若出错则程序终止执行，执行完成则表明无问题。
 func checkDir() {
-	//	检查图像目录是否存在，若不存在则建立。
-	//	若出错则程序终止执行，执行完成则表明无问题。
-
 	loginfo("检查图片目录是否正常……")
-	_, err := os.Stat(dir)
 
+	_, err := os.Stat(dir)
 	if err != nil {
-		//		查看目录出错
+		// 查看目录出错
 		loginfo(fmt.Sprint(err))
+
 		if strings.Contains(fmt.Sprint(err), "no such file or directory") {
 			loginfo("没有发现图片目录，将新建目录：" + dir)
+
 			err = os.Mkdir(dir, 0755)
 			if err != nil {
-				//				创建目录报错
+				// 创建目录报错
 				if strings.Contains(fmt.Sprint(err), "no such file or directory") {
 					loginfo(fmt.Sprint(err))
 					logerr(fmt.Sprintf("%s 目录创建失败，请检查父目录是否存在。", dir))
@@ -176,8 +181,9 @@ func checkDir() {
 					logerr(fmt.Sprintf("%s 目录创建失败，请手动创建。", dir))
 				}
 			} else {
-				//				检查目录是否创建成功
+				// 检查目录是否创建成功
 				loginfo("目录创建完成，检查是否创建成功。")
+
 				_, err := os.Stat(dir)
 				if err != nil {
 					loginfo(fmt.Sprint(err))
@@ -195,14 +201,14 @@ func checkDir() {
 		loginfo("目录似乎正常。")
 	}
 
-	//创建文件测试目录是否可写
+	// 创建文件测试目录是否可写
 	loginfo("程序将创建测试文件以检查目录是否可写……")
 	f, err := os.Create(dir + "test")
 	f.WriteString("test file.")
 	f.Close()
 
 	if err != nil {
-		//				创建文件报错
+		// 创建文件报错
 		if strings.Contains(fmt.Sprint(err), "no such file or directory") {
 			loginfo(fmt.Sprint(err))
 			logerr(fmt.Sprintf("%s 测试文件创建失败，请检查父目录是否存在。", dir+"test"))
@@ -221,7 +227,5 @@ func checkDir() {
 		} else {
 			loginfo("目录可写。")
 		}
-
 	}
-
 }
